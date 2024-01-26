@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "mecha-bayashi"
+version = "0.1.0"
+description = ""
+authors = ["Nakaya <eniehack@outlook.jp>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "mecha-bayashi"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+SudachiPy = "^0.6.8"
+SudachiDict-core = "^20240109"
+markovify = "^0.9.4"
+requests = "^2.31.0"
+mypy = "^1.8.0"
+ruff = "^0.1.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "PLR"]
+unfixable = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
