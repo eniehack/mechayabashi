@@ -15,7 +15,10 @@ markovify = "^0.9.4"
 requests = "^2.31.0"
 mypy = "^1.8.0"
 ruff = "^0.1.14"
+classopt = "^0.2.1"
 
+[tool.poetry.group.discord.dependencies]
+discord-py = "^2.3.2"
 
 [build-system]
 requires = ["poetry-core"]
