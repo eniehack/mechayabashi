@@ -19,7 +19,7 @@ with open(args.dic, 'r') as f:
 
 @tree.command(name="generate", description="マルコフ連鎖で文章を生成します")
 async def generate(ctx: Interaction):
-    await ctx.response.send_message(text_model.make_sentence())
+    await ctx.response.send_message(text_model.make_sentence().replace(" ", ""))
 
 @client.event
 async def on_ready():

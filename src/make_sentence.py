@@ -10,4 +10,4 @@ with open(args.dict, 'r') as f:
     text_model = markovify.Text.from_json(f.read())
 
 for i in range(10):
-    print(text_model.make_sentence())
+    print(text_model.make_sentence().replace(" ", ""))

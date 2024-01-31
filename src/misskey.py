@@ -18,7 +18,7 @@ if __name__ == "__main__":
         f"https://{args.host}/api/notes/create",
         json={
             "i": args.token,
-            "text": text_model.make_sentence(),
+            "text": text_model.make_sentence().replace(" ", ""),
             "visibility": "home",
         },
         headers={"Content-Type": "application/json"}
