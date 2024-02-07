@@ -65,9 +65,11 @@ async def on_reaction_add(reaction: Reaction, user: Member | User):
         "メカやばしはなかやばしのツイートから文章を生成するbotです。"
     ):
         return
-
+    tokens = ["__BEGIN__"] * (args.state - 1)
+    tokens.extend([m.surface() for m in tokenizer.tokenize(msg.content)])
+    tokens.extend(["__END__"] * (args.state - 1))
     for token in ngrams(
-        [m.surface() for m in tokenizer.tokenize(msg.content)],
+        tokens,
         args.state + 1
     ):
         print(token)
