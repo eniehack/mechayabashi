@@ -28,36 +28,54 @@ if __name__ == "__main__":
         root = json.loads(content)
 
     paragraphs = []
+    trans = str.maketrans({
+        "（": "",
+        "）": "",
+        "「": "",
+        "」": "",
+        "(": "",
+        ")": "",
+        "{": "",
+        "}": "",
+        "[": "",
+        "]": "",
+        "\"": "",
+        "'": ""}
+    )
     for i in root:
         if i["tweet"]["full_text"].startswith("RT"):
             continue
-        else:
-            txts = i["tweet"]["full_text"].split()
-            paragraph = []
-            for txt in txts:
-                if txt.startswith("@"):
-                    continue
-                if txt.startswith("https://t.co"):
-                    continue
-                paragraph.append(txt)
-            paragraphs.append(
-                Item(
-                    pubDate=datetime.strptime(
-                        i["tweet"]["created_at"],
-                        "%a %b %d %H:%M:%S %z %Y"
-                    ),
-                    description=" ".join(paragraph)
-                )
-            )
+        if 0 < i["tweet"]["full_text"].count("#シェル芸") and 0 < i["tweet"]["full_text"].count("#tweetgen") and 0 < i["tweet"]["full_text"].count("#shindanmaker") and 0 < i["tweet"]["full_text"].count("🟩"):
+            continue
+        txt = str.translate(i["tweet"]["full_text"], trans)
+        txt = re.sub(r"@\w+", "", txt)
+        txt = re.sub(r"&gt;&gt;(RT|rt)", "", txt)
+        txt = re.sub(r"^&gt;\ ", "", txt)
+        txt = re.sub(r"https://t\.co/\w+", "", txt)
+        txt = re.sub(r"https://twitter\.com/\w+/[0-9]+", "", txt)
+        # for txt in txts:
+        #     if re.sub("@\w+", "", txt):
+        #         continue
+        #     if txt.startswith("https://"):
+        #         continue
+        #     paragraph.append()
+        paragraphs.append(
+            {"pubDate": datetime.strptime(
+                    i["tweet"]["created_at"],
+                    "%a %b %d %H:%M:%S %z %Y"
+                ),
+                "description": txt
+            }
+        )
 
     wakachigaki_ps = []
     tokenizer = Dictionary().create()
     for p in paragraphs:
-        p_arr = [m.surface() for m in tokenizer.tokenize(p.description)]
-        wakachigaki_ps.append(Item(pubDate=p.pubDate, description=" ".join(p_arr)))
+        p_arr = [m.surface() for m in tokenizer.tokenize(p["description"])]
+        wakachigaki_ps.append(Item(pubDate=p["pubDate"], description=" ".join(p_arr)))
 
     print(wakachigaki_ps)
-    with open("./data.csv", "a") as f:
+    with open(args.output, "a") as f:
         writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
         for item in wakachigaki_ps:
             if len(item.description) < 1:

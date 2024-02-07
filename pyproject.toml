@@ -11,11 +11,13 @@ packages = [{include = "mecha-bayashi"}]
 python = "^3.11"
 SudachiPy = "^0.6.8"
 SudachiDict-core = "^20240109"
-markovify = "^0.9.4"
 requests = "^2.31.0"
 mypy = "^1.8.0"
 ruff = "^0.1.14"
 classopt = "^0.2.1"
+nltk = "^3.8.1"
+python-ulid = "^2.2.0"
+cbor2 = "^5.6.1"
 
 [tool.poetry.group.discord.dependencies]
 discord-py = "^2.3.2"
