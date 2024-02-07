@@ -45,7 +45,13 @@ if __name__ == "__main__":
     for i in root:
         if i["tweet"]["full_text"].startswith("RT"):
             continue
-        if 0 < i["tweet"]["full_text"].count("#シェル芸") and 0 < i["tweet"]["full_text"].count("#tweetgen") and 0 < i["tweet"]["full_text"].count("#shindanmaker") and 0 < i["tweet"]["full_text"].count("🟩"):
+        if "#シェル芸" in i["tweet"]["full_text"]:
+            continue
+        if "#tweetgen" in i["tweet"]["full_text"]:
+            continue
+        if "#shindanmaker" in i["tweet"]["full_text"]:
+            continue
+        if "🟩" in i["tweet"]["full_text"]:
             continue
         txt = str.translate(i["tweet"]["full_text"], trans)
         txt = re.sub(r"@\w+", "", txt)
