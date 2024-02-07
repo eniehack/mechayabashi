@@ -66,7 +66,7 @@ async def on_reaction_add(reaction: Reaction, user: Member | User):
     ):
         return
     tokens = ["__BEGIN__"] * (args.state - 1)
-    tokens.extend([m.surface() for m in tokenizer.tokenize(msg.content)])
+    tokens.extend([m.surface() for m in tokenizer.tokenize(msg.content) if m.surface() not in [" ", ""]])
     tokens.extend(["__END__"] * (args.state - 1))
     for token in ngrams(
         tokens,

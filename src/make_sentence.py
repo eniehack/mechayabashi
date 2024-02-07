@@ -29,6 +29,16 @@ def choice(db: sqlite3.Connection, word: list[str]) -> list[str]:
 def remove_padding(sentence: list[str]) -> list[str]:
     return [word for word in sentence if word not in ["__BEGIN__", "__END__"]]
 
+def concat(l: list[str]) -> str:
+    asc = [s.isascii() for s in l]
+    s = l[0]
+    for i in range(1,len(l)):
+        if asc[i-1] == asc[i]:
+                s += l[i]
+        else:
+                s += " " 
+                s += l[i]
+    return s
 
 def make_sentence(db: sqlite3.Connection, state: int) -> str:
     sentence: list[str] = ["__BEGIN__"] * state
@@ -37,7 +47,7 @@ def make_sentence(db: sqlite3.Connection, state: int) -> str:
         #print("new", new)
         sentence.append(new[-1])
         #print(sentence)
-    return "".join(remove_padding(sentence))
+    return concat(remove_padding(sentence))
 
 if __name__ == "__main__":
     args = CLIOpt.from_args()
