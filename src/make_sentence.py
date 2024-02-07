@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from random import choices
+from random import choices, random
 
 from classopt import classopt, config
 
@@ -17,10 +17,13 @@ def choice(db: sqlite3.Connection, word: list[str]) -> list[str]:
             "SELECT word, frequency, feedback FROM words WHERE word LIKE ?",
             (f"{' '.join(word)} %",),
         ).fetchall()
-    freq = [r["frequency"] for r in res]
     words = [r["word"] for r in res]
-    feedbacks = [r["feedback"] * 0.025 + (1 / len(words)) for r in res]
-    w = [i[0]*0.05+i[1] for i in zip(freq, feedbacks)]
+    
+    if random() <= 0.2:
+        return choices(words, k=1)[0].split()
+    freq = [r["frequency"] for r in res]
+    feedbacks = [r["feedback"] for r in res]
+    w = [(i[0] * 0.8 + i[1] * 0.2) / len(words) for i in zip(freq, feedbacks)]
     return choices(words, weights=w, k=1)[0].split()
 
 def remove_padding(sentence: list[str]) -> list[str]:
