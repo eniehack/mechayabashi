@@ -61,7 +61,15 @@ async def on_reaction_add(reaction: Reaction, user: Member | User):
         return
     if not msg.author.id == client.user.id:
         return
-    for token in ngrams([m.surface() for m in tokenizer.tokenize(msg.content)], args.state + 1):
+    if msg.content.startswith(
+        "メカやばしはなかやばしのツイートから文章を生成するbotです。"
+    ):
+        return
+
+    for token in ngrams(
+        [m.surface() for m in tokenizer.tokenize(msg.content)],
+        args.state + 1
+    ):
         print(token)
         with db:
             res = db.execute(
