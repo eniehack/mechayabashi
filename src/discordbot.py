@@ -24,6 +24,16 @@ tokenizer = Dictionary().create()
 db = sqlite3.connect(args.dic)
 db.row_factory = sqlite3.Row
 
+@tree.command(name="help", description="メカやばしの使い方を説明します")
+async def help(ctx: Interaction):
+    await ctx.response.send_message(
+        """
+        メカやばしはなかやばしのツイートから文章を生成するbotです。
+        さらに、生成した文章にリアクションを付けることでフィードバックすることができます。
+        ❌を付けると「良くない文である」と、それ以外のリアクションは「良い文である」とそれぞれフィードバックします。
+        """
+    )
+
 @tree.command(name="generate", description="マルコフ連鎖で文章を生成します")
 async def generate(ctx: Interaction):
     await ctx.response.send_message(
