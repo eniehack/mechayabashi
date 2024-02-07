@@ -11,7 +11,7 @@ class CLIOpt:
     state: int = config(long=True, default=3)
 
 def choice(db: sqlite3.Connection, word: list[str]) -> list[str]:
-    print("choice word", f"{' '.join(word)} %")
+    #print("choice word", f"{' '.join(word)} %")
     with db:
         res = db.execute(
             "SELECT word, frequency FROM words WHERE word LIKE ?",
@@ -25,17 +25,20 @@ def remove_padding(sentence: list[str]) -> list[str]:
     return [word for word in sentence if word not in ["__BEGIN__", "__END__"]]
 
 
-args = CLIOpt.from_args()
+def make_sentence(db: sqlite3.Connection, state: int) -> str:
+    sentence: list[str] = ["__BEGIN__"] * state
+    while len(sentence) < 1 or sentence[-2] != "__END__":
+        new = choice(db, sentence[-state:])
+        #print("new", new)
+        sentence.append(new[-1])
+        #print(sentence)
+    return "".join(remove_padding(sentence))
 
-db = sqlite3.connect(args.db)
-db.row_factory = sqlite3.Row
+if __name__ == "__main__":
+    args = CLIOpt.from_args()
 
-sentence: list[str] = ["__BEGIN__"] * args.state
-while len(sentence) < 1 or sentence[-1] != "__END__":
-    new = choice(db, sentence[-args.state:])
-    print("new", new)
-    sentence.append(new[-1])
-    #print(sentence)
+    db = sqlite3.connect(args.db)
+    db.row_factory = sqlite3.Row
+    print(make_sentence(db, args.state))
 
-print(sentence)
-print(remove_padding(sentence))
+
