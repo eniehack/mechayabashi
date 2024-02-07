@@ -14,12 +14,14 @@ def choice(db: sqlite3.Connection, word: list[str]) -> list[str]:
     #print("choice word", f"{' '.join(word)} %")
     with db:
         res = db.execute(
-            "SELECT word, frequency FROM words WHERE word LIKE ?",
+            "SELECT word, frequency, feedback FROM words WHERE word LIKE ?",
             (f"{' '.join(word)} %",),
         ).fetchall()
     freq = [r["frequency"] for r in res]
     words = [r["word"] for r in res]
-    return choices(words, weights=freq, k=1)[0].split()
+    feedbacks = [r["feedback"] * 0.025 + (1 / len(words)) for r in res]
+    w = [i[0]*0.05+i[1] for i in zip(freq, feedbacks)]
+    return choices(words, weights=w, k=1)[0].split()
 
 def remove_padding(sentence: list[str]) -> list[str]:
     return [word for word in sentence if word not in ["__BEGIN__", "__END__"]]

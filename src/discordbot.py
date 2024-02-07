@@ -1,9 +1,10 @@
+import sqlite3
 from pathlib import Path
 
 from classopt import classopt, config
-from discord import Client, Intents, Interaction, app_commands
+from discord import Client, Intents, Interaction, Member, Reaction, User, app_commands
 from make_sentence import make_sentence
-import sqlite3
+from nltk import ngrams
 from sudachipy import Dictionary
 
 
@@ -42,5 +43,36 @@ async def wakatigaki(ctx: Interaction, txt: str):
 async def on_ready():
     print("ready")
     await tree.sync()
+
+@client.event
+async def on_reaction_add(reaction: Reaction, user: Member | User):
+    msg = reaction.message
+    if msg.author == user:
+        return
+    if not msg.author.id == client.user.id:
+        return
+    for token in ngrams([m.surface() for m in tokenizer.tokenize(msg.content)], args.state + 1):
+        print(token)
+        with db:
+            res = db.execute(
+                "SELECT ulid, feedback FROM words WHERE word = ?;",
+                (" ".join(token),)
+            ).fetchone()
+        if reaction.emoji in ["❌"]:
+            with db:
+                db.execute(
+                    "UPDATE words SET feedback = ? WHERE ulid = ?;",
+                    (res["feedback"] - 1, res["ulid"])
+                )
+                print("downvoted", " ".join(token), res["feedback"] - 1)
+        else:
+            with db:
+                db.execute(
+                    "UPDATE words SET feedback = ? WHERE ulid = ?;",
+                    (res["feedback"] + 1, res["ulid"])
+                )
+                print("upvoted", " ".join(token), res["feedback"] + 1)
+        
+
 
 client.run(args.token)
