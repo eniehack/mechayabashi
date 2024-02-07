@@ -27,7 +27,7 @@ def remove_padding(sentence: list[str]) -> list[str]:
 
 def make_sentence(db: sqlite3.Connection, state: int) -> str:
     sentence: list[str] = ["__BEGIN__"] * state
-    while len(sentence) < 1 or sentence[-2] != "__END__":
+    while sentence[-state] != "__END__":
         new = choice(db, sentence[-state:])
         #print("new", new)
         sentence.append(new[-1])
