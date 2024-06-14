@@ -1,30 +1,36 @@
-[tool.poetry]
-name = "mecha-bayashi"
+[project]
+name = "mechayabashi"
 version = "0.1.0"
 description = ""
-authors = ["Nakaya <eniehack@outlook.jp>"]
+authors = [{name = "Nakaya", email="eniehack@outlook.jp"}]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "mecha-bayashi"}]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-SudachiPy = "^0.6.8"
-SudachiDict-core = "^20240109"
-requests = "^2.31.0"
-mypy = "^1.8.0"
-ruff = "^0.1.14"
-classopt = "^0.2.1"
-nltk = "^3.8.1"
-python-ulid = "^2.2.0"
-cbor2 = "^5.6.1"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "SudachiPy~=0.6.8",
+    "SudachiDict-core==20240109",
+    "requests~=2.31.0",
+    "classopt~=0.2.1",
+    "nltk~=3.8.1",
+    "python-ulid~=2.2.0",
+    "cbor2~=5.6.1",
+    "discord-py~=2.3.2",
+]
 
-[tool.poetry.group.discord.dependencies]
-discord-py = "^2.3.2"
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "mypy~=1.8.0",
+    "ruff~=0.1.14",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mechayabashi"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "PLR"]
