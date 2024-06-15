@@ -1,6 +1,7 @@
+import requests
 from classopt import classopt, config
 from markovify import Text
-import requests
+
 
 @classopt
 class CLIOpt:
