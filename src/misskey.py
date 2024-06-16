@@ -1,6 +1,11 @@
+import sqlite3
+import json
+import sys
+
 import requests
 from classopt import classopt, config
-from markovify import Text
+from make_sentence import make_sentence
+
 
 
 @classopt
@@ -8,20 +13,25 @@ class CLIOpt:
     dic: str = config(long=True)
     host: str = config(long=True)
     token: str = config(long=True)
+    state: int = config(long=True)
 
 if __name__ == "__main__":
     args = CLIOpt.from_args()
-    
-    with open(args.dic, 'r') as f:
-        text_model = Text.from_json(f.read())
+
+    db = sqlite3.connect(args.dic)
+    db.row_factory = sqlite3.Row
 
     resp = requests.post(
         f"https://{args.host}/api/notes/create",
         json={
             "i": args.token,
-            "text": text_model.make_sentence().replace(" ", ""),
+            "text": make_sentence(db, args.state),
             "visibility": "home",
         },
         headers={"Content-Type": "application/json"}
     )
-    print(resp)
+    if resp.status_code != 200:
+        exit(0)
+    else:
+        json.dump({"payload": resp.json(), "status": resp.status_code}, sys.stderr)
+        exit(1)
