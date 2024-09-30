@@ -5,6 +5,9 @@ description = "markov-chain bot"
 authors = ["Nakaya <eniehack@outlook.jp>"]
 license = "MIT"
 readme = "README.md"
+packages = [
+    { include = "mechayabashi", from = "src" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"

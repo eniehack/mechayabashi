@@ -14,31 +14,34 @@ def choice(db: sqlite3.Connection, word: list[str]) -> list[str]:
     #print("choice word", f"{' '.join(word)} %")
     with db:
         res = db.execute(
-            "SELECT word, frequency, feedback FROM words WHERE word LIKE ?",
+            "SELECT word, tfidf, feedback FROM words WHERE word LIKE ?",
             (f"{' '.join(word)} %",),
         ).fetchall()
     words = [r["word"] for r in res]
     
-    if random() <= 0.2:
+    if random() <= 1/3:
         return choices(words, k=1)[0].split()
-    freq = [r["frequency"] for r in res]
+    freq = [r["tfidf"] for r in res]
     feedbacks = [r["feedback"] for r in res]
-    w = [(i[0] * 0.8 + i[1] * 0.2) / len(words) for i in zip(freq, feedbacks)]
+    w = [i[0] * (0.9 + i[1]) for i in zip(freq, feedbacks)]
     return choices(words, weights=w, k=1)[0].split()
 
 def remove_padding(sentence: list[str]) -> list[str]:
     return [word for word in sentence if word not in ["__BEGIN__", "__END__"]]
 
 def concat(l: list[str]) -> str:
-    asc = [s.isascii() for s in l]
-    s = l[0]
-    for i in range(1,len(l)):
-        if asc[i-1] == asc[i]:
-                s += l[i]
-        else:
-                s += " " 
-                s += l[i]
-    return s
+    return chr(0x2063).join(l)
+    # asc = [s.isascii() for s in l]
+    # s = l[0]
+    # for i in range(1,len(l)):
+    #     if not asc[i] and asc[i-1] == asc[i]:
+    #         s += l[i]
+    #     elif l[i-1] in ["#"]:
+    #         s += l[i]
+    #     else:
+    #         s += " " 
+    #         s += l[i]
+    # return s
 
 def make_sentence(db: sqlite3.Connection, state: int) -> str:
     sentence: list[str] = ["__BEGIN__"] * state

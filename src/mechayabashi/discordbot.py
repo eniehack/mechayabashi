@@ -3,7 +3,7 @@ from pathlib import Path
 
 from classopt import classopt, config
 from discord import Client, Intents, Interaction, Member, Reaction, User, app_commands
-from make_sentence import make_sentence
+from .make_sentence import make_sentence
 from nltk import ngrams
 from sudachipy import Dictionary
 
@@ -21,8 +21,6 @@ client = Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 tokenizer = Dictionary().create()
-db = sqlite3.connect(args.dic)
-db.row_factory = sqlite3.Row
 
 @tree.command(name="help", description="メカやばしの使い方を説明します")
 async def help(ctx: Interaction):
@@ -36,9 +34,13 @@ async def help(ctx: Interaction):
 
 @tree.command(name="generate", description="マルコフ連鎖で文章を生成します")
 async def generate(ctx: Interaction):
-    await ctx.response.send_message(
+    await ctx.response.defer()
+    db = sqlite3.connect(args.dic)
+    db.row_factory = sqlite3.Row
+    await ctx.followup.send(
         make_sentence(db, args.state)
     )
+    db.close()
 
 @tree.command(name="wakatigaki", description="分かち書きします")
 @app_commands.describe(
@@ -66,9 +68,13 @@ async def on_reaction_add(reaction: Reaction, user: Member | User):
     ):
         return
     tokens = ["__BEGIN__"] * (args.state - 1)
-    # tokens.extend([m.surface() for m in tokenizer.tokenize(msg.content) if m.surface() not in [" ", ""]])
+    # tokens.extend(
+    #     [m.surface() for m in tokenizer.tokenize(msg.content) if m.surface() not in [" ", ""]]
+    # )
     tokens.extend([i for i in msg.content.split(chr(0x2063))])
     tokens.extend(["__END__"] * args.state)
+    db = sqlite3.connect(args.dic)
+    db.row_factory = sqlite3.Row
     for token in ngrams(
         tokens,
         args.state + 1
@@ -93,7 +99,7 @@ async def on_reaction_add(reaction: Reaction, user: Member | User):
                     (res["feedback"] + 1, res["ulid"])
                 )
                 print("upvoted", " ".join(token), res["feedback"] + 1)
-        
+    db.close()
 
-
-client.run(args.token)
+if __name__ == "__main__":
+    client.run(args.token)

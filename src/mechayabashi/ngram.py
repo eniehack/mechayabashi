@@ -2,6 +2,7 @@ import csv
 import sqlite3
 from collections import Counter
 from pathlib import Path
+from math import log
 
 from classopt import classopt, config
 from nltk import ngrams
@@ -28,12 +29,15 @@ def fetch_wordID(db: sqlite3.Connection, node: tuple) -> str:
         ).fetchone()
     return res[0]
 
-def insert_node(db: sqlite3.Connection, counter: Counter, n: int) -> None:
+def tfidf(w_freq_sum: int, w_freq: int, doc_size) -> float:
+    return w_freq * log(doc_size - w_freq/w_freq) / w_freq_sum
+
+def insert_node(db: sqlite3.Connection, n_counter: Counter) -> None:
     with db:
         db.executemany(
             """
-            INSERT INTO words (ulid, word, frequency, feedback)
-            SELECT :ulid, :word, :freq, :fb
+            INSERT INTO words (ulid, word, feedback)
+            SELECT :ulid, :word, :fb
             WHERE NOT EXISTS (
                 SELECT * FROM words WHERE word = :word
             );
@@ -42,49 +46,46 @@ def insert_node(db: sqlite3.Connection, counter: Counter, n: int) -> None:
                 {
                     "ulid": str(ULID()),
                     "word": " ".join(node),
-                    "freq": counter[node],
                     "fb": 0.0,
                 }
-                for node in counter
+                for node in n_counter
             ]
         )
 
 
-# def insert_edge(db: sqlite3.Connection, counter: Counter, state: int):
-#     db.row_factory = sqlite3.Row
-#     for node in counter:
-#         with db:
-#             res = db.execute(
-#                 """
-#                 SELECT ulid, word, frequency FROM words
-#                 WHERE word LIKE ?
-#                   AND word != ?;
-#                 """,
-#                 (f"{' '.join(node[-state:])}%", ' '.join(node))
-#             ).fetchall()
-#         # neighbors = [(r["ulid"], r["word"], r["frequency"]) for r in res]
-#         # print(neighbors)
+def insert_tfidf(db: sqlite3.Connection, nky_counter: Counter, docs_size: int, gen_counter: Counter) -> None:
+    tfidf_scores: dict[tuple, float] = {}
+    all = sum(nky_counter.values())
+    for i in nky_counter:
+        tfidf_scores[i] = tfidf(all, nky_counter[i], docs_size)
+    with db:
+        db.executemany(
+            "UPDATE words SET tfidf = ? WHERE word = ?",
+            [(v, " ".join(k)) for k, v in tfidf_scores.items()]
+        )
 
 def default_encoder(encoder, value):
     encoder.encode(vars(value))
 
 if __name__ == "__main__":
     args = CLIOpt.from_args()
-    paragraph_list = []
+    paragraph_list: list[str] = []
     with open(args.csv) as f:
         reader = csv.reader(f)
         for row in reader:
             begin = [BEGIN] * (args.state)
             end = [END] * (args.state)
             paragraph_list.append(f'{" ".join(begin)} {row[1]} {" ".join(end)}')
+    docs_size = len(paragraph_list)
     wakachigaki_pl = [p.split() for p in paragraph_list]
     #print(wakachigaki_pl)
-    words: list[tuple] = []
-    for p in wakachigaki_pl:
-        words.extend(list(ngrams(p, args.state + 1)))
-        
+    words: list[tuple[int, list[tuple]]] = []
+    for i, p in enumerate(wakachigaki_pl):
+        words.append(i, list(ngrams(p, args.state + 1))))
+    
+    l = len(words)
     #print(ngrams)
-    counter = Counter(words)
+    n_counter = Counter(words)
     #print(counter)
 
     db = sqlite3.connect(args.db)
@@ -92,5 +93,5 @@ if __name__ == "__main__":
     if args.migrate:
         with db:
             migrate(db, args.migrate_dir.glob("*.sql"))
-    insert_node(db, counter, args.state)
-    #insert_edge(db, counter, args.state)
+    insert_node(db, n_counter)
+    insert_tfidf(db, n_counter, docs_size, n_counter)
