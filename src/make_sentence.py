@@ -30,15 +30,16 @@ def remove_padding(sentence: list[str]) -> list[str]:
     return [word for word in sentence if word not in ["__BEGIN__", "__END__"]]
 
 def concat(l: list[str]) -> str:
-    asc = [s.isascii() for s in l]
-    s = l[0]
-    for i in range(1,len(l)):
-        if asc[i-1] == asc[i]:
-                s += l[i]
-        else:
-                s += " " 
-                s += l[i]
-    return s
+    return chr(0x2063).join(l)
+    # asc = [s.isascii() for s in l]
+    # s = l[0]
+    # for i in range(1,len(l)):
+    #     if asc[i-1] == asc[i]:
+    #             s += l[i]
+    #     else:
+    #             s += " " 
+    #             s += l[i]
+    # return s
 
 def make_sentence(db: sqlite3.Connection, state: int) -> str:
     sentence: list[str] = ["__BEGIN__"] * state
