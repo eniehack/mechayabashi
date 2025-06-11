@@ -1,5 +1,6 @@
 import sqlite3
 from pathlib import Path
+import math
 
 from classopt import classopt, config
 from discord import Client, Intents, Interaction, Member, Reaction, User, app_commands
@@ -54,6 +55,9 @@ async def on_ready():
     print("ready")
     await tree.sync()
 
+def update_weight(old: float, current: float, alpha = 0.1):
+    return (1 - alpha) * old + alpha * current
+
 @client.event
 async def on_reaction_add(reaction: Reaction, user: Member | User):
     msg = reaction.message
@@ -69,30 +73,34 @@ async def on_reaction_add(reaction: Reaction, user: Member | User):
     # tokens.extend([m.surface() for m in tokenizer.tokenize(msg.content) if m.surface() not in [" ", ""]])
     tokens.extend([i for i in msg.content.split(chr(0x2063))])
     tokens.extend(["__END__"] * args.state)
-    for token in ngrams(
-        tokens,
-        args.state + 1
-    ):
-        print(token)
-        with db:
-            res = db.execute(
-                "SELECT ulid, feedback FROM words WHERE word = ?;",
-                (" ".join(token),)
-            ).fetchone()
+
+    results = []    
+    with db:
+        for token in ngrams(tokens, args.state + 1):
+            results.append(
+                db.execute(
+                    "SELECT ulid, word, frequency, feedback FROM words WHERE word = ?;",
+                    (' '.join(token),),
+                ).fetchone()
+            )
+    rev_freqs: list[float] = [1.0/r['frequency'] for r in results]
+    sum_w = math.fsum(rev_freqs)
+    for r in results:
+        weight = 1 / (sum_w * r['frequency'])
         if reaction.emoji in ["❌"]:
             with db:
                 db.execute(
                     "UPDATE words SET feedback = ? WHERE ulid = ?;",
-                    (res["feedback"] - 1, res["ulid"])
+                    (update_weight(r["feedback"], -1 * weight), r["ulid"])
                 )
-                print("downvoted", " ".join(token), res["feedback"] - 1)
+                print("downvoted", r['word'], update_weight(r["feedback"], -1 * weight))
         else:
             with db:
                 db.execute(
                     "UPDATE words SET feedback = ? WHERE ulid = ?;",
-                    (res["feedback"] + 1, res["ulid"])
+                    (update_weight(r["feedback"], weight), r["ulid"])
                 )
-                print("upvoted", " ".join(token), res["feedback"] + 1)
+                print("upvoted", r['word'], update_weight(r["feedback"], weight))
         
 
 
