@@ -10,7 +10,57 @@ class CLIOpt:
     db: Path = config(long=True)
     state: int = config(long=True, default=3)
 
-def choice(db: sqlite3.Connection, word: list[str]) -> list[str]:
+def choice_by_bayesian(db, word: list[str], beta=1.5, baseline_factor=0.5) -> list[str]:
+    """ベイズ的アプローチで次の単語を選択"""
+    with db:
+        res = db.execute(
+            "SELECT word, frequency, feedback FROM words WHERE word LIKE ?",
+            (f"{' '.join(word)} %",),
+        ).fetchall()
+    
+    if not res:
+        return []
+    
+    words = [r["word"] for r in res]
+    
+    # 20%の確率でランダム選択（元のロジックを保持）
+    if random() <= 0.2:
+        return choices(words, k=1)[0].split()
+    
+    # ベースライン計算（全体平均の半分）
+    total_reactions = sum(r["feedback"] for r in res)
+    total_freq = sum(r["frequency"] for r in res)
+    baseline = (total_reactions / total_freq * baseline_factor) if total_freq > 0 else 0.1
+    
+    # ベイズ的重み計算
+    weights = []
+    for r in res:
+        freq, feedback = r["frequency"], r["feedback"]
+        
+        # 事前確率（その文脈での出現確率）
+        prior = freq / total_freq if total_freq > 0 else 0
+        
+        # 尤度（リアクション率 + ベースライン）
+        reaction_rate = feedback / freq if freq > 0 else 0
+        likelihood = reaction_rate + baseline
+        
+        # ベイズ重み = 事前確率 × (尤度 + ベースライン)^beta
+        weight = prior * ((likelihood + 1.0) ** beta)
+        weights.append(weight)
+    
+    return choices(words, weights=weights, k=1)[0].split()
+
+def make_sentence_bayesian(db: sqlite3.Connection, state: int, beta=1.5) -> str:
+    """ベイズ的アプローチで文章生成"""
+    sentence: list[str] = ["__BEGIN__"] * state
+    while sentence[-state] != "__END__":
+        new = choice_by_bayesian(db, sentence[-state:], beta=beta)
+        if not new:  # 候補がない場合は終了
+            break
+        sentence.append(new[-1])
+    return concat(remove_padding(sentence))
+
+def choice_by_geometric_mean(db: sqlite3.Connection, word: list[str]) -> list[str]:
     #print("choice word", f"{' '.join(word)} %")
     with db:
         res = db.execute(
@@ -44,7 +94,7 @@ def concat(l: list[str]) -> str:
 def make_sentence(db: sqlite3.Connection, state: int) -> str:
     sentence: list[str] = ["__BEGIN__"] * state
     while sentence[-state] != "__END__":
-        new = choice(db, sentence[-state:])
+        new = choice_by_geometric_mean(db, sentence[-state:])
         #print("new", new)
         sentence.append(new[-1])
         #print(sentence)

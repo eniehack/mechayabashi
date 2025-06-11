@@ -3,7 +3,7 @@ from pathlib import Path
 
 from classopt import classopt, config
 from discord import Client, Intents, Interaction, Member, Reaction, User, app_commands
-from make_sentence import make_sentence
+from make_sentence import make_sentence_bayesian
 from nltk import ngrams
 from sudachipy import Dictionary
 
@@ -37,7 +37,7 @@ async def help(ctx: Interaction):
 @tree.command(name="generate", description="マルコフ連鎖で文章を生成します")
 async def generate(ctx: Interaction):
     await ctx.response.send_message(
-        make_sentence(db, args.state)
+        make_sentence_bayesian(db, args.state)
     )
 
 @tree.command(name="wakatigaki", description="分かち書きします")
