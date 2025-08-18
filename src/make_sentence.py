@@ -10,7 +10,19 @@ class CLIOpt:
     db: Path = config(long=True)
     state: int = config(long=True, default=3)
 
-def choice_by_bayesian(db, word: list[str], beta=1.5, baseline_factor=0.5) -> list[str]:
+def generate_random_choice_percent(db) -> float:
+    with db:
+        nonzero_row_count = db.execute(
+            "SELECT count(*) as res FROM words WHERE feedback != 0",
+        ).fetchone()
+        row_count = db.execute(
+            "SELECT count(*) as res FROM words",
+        ).fetchone()
+    nonzero_row_percent = nonzero_row_count["res"] / row_count["res"]
+    random_percent = 0.2 if 0.5 <= nonzero_row_percent else (0.8 - nonzero_row_percent)
+    return random_percent
+
+def choice_by_bayesian(db, word: list[str], random_percent: float, beta=1.5, baseline_factor=0.5) -> list[str]:
     """ベイズ的アプローチで次の単語を選択"""
     with db:
         res = db.execute(
@@ -24,7 +36,7 @@ def choice_by_bayesian(db, word: list[str], beta=1.5, baseline_factor=0.5) -> li
     words = [r["word"] for r in res]
     
     # 20%の確率でランダム選択（元のロジックを保持）
-    if random() <= 0.2:
+    if random() <= random_percent:
         return choices(words, k=1)[0].split()
     
     # ベースライン計算（全体平均の半分）
@@ -50,11 +62,11 @@ def choice_by_bayesian(db, word: list[str], beta=1.5, baseline_factor=0.5) -> li
     
     return choices(words, weights=weights, k=1)[0].split()
 
-def make_sentence_bayesian(db: sqlite3.Connection, state: int, beta=1.5) -> str:
+def make_sentence_bayesian(db: sqlite3.Connection, state: int, random_choice_percent, beta=1.5) -> str:
     """ベイズ的アプローチで文章生成"""
     sentence: list[str] = ["__BEGIN__"] * state
     while sentence[-state] != "__END__":
-        new = choice_by_bayesian(db, sentence[-state:], beta=beta)
+        new = choice_by_bayesian(db, sentence[-state:], random_choice_percent, beta=beta)
         if not new:  # 候補がない場合は終了
             break
         sentence.append(new[-1])

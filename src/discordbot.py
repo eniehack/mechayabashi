@@ -4,7 +4,7 @@ import math
 
 from classopt import classopt, config
 from discord import Client, Intents, Interaction, Member, Reaction, User, app_commands
-from make_sentence import make_sentence_bayesian
+from make_sentence import make_sentence_bayesian, generate_random_choice_percent
 from nltk import ngrams
 from sudachipy import Dictionary
 
@@ -24,6 +24,7 @@ tree = app_commands.CommandTree(client)
 tokenizer = Dictionary().create()
 db = sqlite3.connect(args.dic)
 db.row_factory = sqlite3.Row
+random_choice_percent = generate_random_choice_percent(db)
 
 @tree.command(name="help", description="メカやばしの使い方を説明します")
 async def help(ctx: Interaction):
@@ -37,8 +38,9 @@ async def help(ctx: Interaction):
 
 @tree.command(name="generate", description="マルコフ連鎖で文章を生成します")
 async def generate(ctx: Interaction):
-    await ctx.response.send_message(
-        make_sentence_bayesian(db, args.state)
+    await ctx.response.defer()
+    await ctx.followup.send(
+        make_sentence_bayesian(db, args.state, random_choice_percent)
     )
 
 @tree.command(name="wakatigaki", description="分かち書きします")
